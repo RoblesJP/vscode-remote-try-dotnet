@@ -1,64 +1,44 @@
-public enum CarType
+public class Person
 {
-  Sedan,
-  Crossover
+  public string Name, Position;
 }
 
-class Car
+public sealed class PersonBuilder
 {
-  public CarType Type;
-  public int WheelSize;
-}
+  private readonly List<Func<Person, Person>> actions = new List<Func<Person, Person>>();
 
-// applying interface segregation principle
-interface ISpecifyCarType
-{
-  ISpecifyWheelSize OfType(CarType type);
-}
-
-interface ISpecifyWheelSize
-{
-  IBuildCar WithWheels(int size);
-}
-
-interface IBuildCar
-{
-  public Car Build();
-}
-
-class CarBuilder
-{
-  private class Impl : ISpecifyCarType, ISpecifyWheelSize, IBuildCar
+  public PersonBuilder Called(string name)
   {
-    private Car car = new Car();
-
-    public ISpecifyWheelSize OfType(CarType type)
-    {
-      car.Type = type;
-      return this;
-    }
-
-    public IBuildCar WithWheels(int size)
-    {
-      switch (car.Type)
-      {
-        case CarType.Crossover when size < 17 || size > 20:
-        case CarType.Sedan when size < 15 || size > 17:
-          throw new ArgumentException($"Wrong size of wheel for {car.Type}");
-      }
-
-      car.WheelSize = size;
-      return this;
-    }
-
-    public Car Build()
-    {
-      return car;
-    }
+    return Do(p => p.Name = name);
   }
-  public static ISpecifyCarType Create()
+
+  public PersonBuilder Do(Action<Person> action)
   {
-    return new Impl();
+    return AddAction(action);
+  }
+
+  private PersonBuilder AddAction(Action<Person> action)
+  {
+    actions.Add(p =>
+    {
+      action(p);
+      return p;
+    });
+
+    return this;
+  }
+
+  public Person Build()
+  {
+    return actions.Aggregate(new Person(), (p, f) => f(p));
+  }
+}
+
+public static class PersonBuilderExtensions
+{
+  public static PersonBuilder WorksAs(this PersonBuilder builder, string position)
+  {
+    return builder.Do(p => p.Position = position);
   }
 }
 
@@ -66,11 +46,11 @@ class Program
 {
   static void Main()
   {
-    var car = CarBuilder.Create()
-      .OfType(CarType.Sedan)
-      .WithWheels(16)
+    Person person = new PersonBuilder()
+      .Called("Tav")
+      .WorksAs("Dev")
       .Build();
 
-    Console.WriteLine(car);
+    Console.WriteLine(person);
   }
 }
