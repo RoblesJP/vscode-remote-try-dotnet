@@ -1,44 +1,83 @@
 public class Person
 {
-  public string Name, Position;
+  // address
+  public string StreetAddress, Postcode, City;
+
+  // employment
+  public string CompanyName, Position;
+  public int AnnualIncome;
+
+  public override string ToString()
+  {
+    return $"{StreetAddress}";
+  }
 }
 
-public sealed class PersonBuilder
+public class PersonBuilder // facade
 {
-  private readonly List<Func<Person, Person>> actions = new List<Func<Person, Person>>();
+  // reference!
+  protected Person person = new Person();
 
-  public PersonBuilder Called(string name)
+  public PersonJobBuilder Works => new PersonJobBuilder(person);
+  public PersonAddressBuilder Lives => new PersonAddressBuilder(person);
+
+
+  public static implicit operator Person(PersonBuilder pb)
   {
-    return Do(p => p.Name = name);
+    return pb.person;
+  }
+}
+
+public class PersonJobBuilder : PersonBuilder
+{
+
+  public PersonJobBuilder(Person person)
+  {
+    this.person = person;
   }
 
-  public PersonBuilder Do(Action<Person> action)
+  public PersonJobBuilder At(string companyName)
   {
-    return AddAction(action);
-  }
-
-  private PersonBuilder AddAction(Action<Person> action)
-  {
-    actions.Add(p =>
-    {
-      action(p);
-      return p;
-    });
-
+    person.CompanyName = companyName;
     return this;
   }
 
-  public Person Build()
+  public PersonJobBuilder AsA(string position)
   {
-    return actions.Aggregate(new Person(), (p, f) => f(p));
+    person.Position = position;
+    return this;
+  }
+
+  public PersonJobBuilder Earning(int amount)
+  {
+    person.AnnualIncome = amount;
+    return this;
   }
 }
 
-public static class PersonBuilderExtensions
+public class PersonAddressBuilder : PersonBuilder
 {
-  public static PersonBuilder WorksAs(this PersonBuilder builder, string position)
+  public PersonAddressBuilder(Person person)
   {
-    return builder.Do(p => p.Position = position);
+    this.person = person;
+  }
+
+  public PersonAddressBuilder At(string streetAddress)
+  {
+    person.StreetAddress = streetAddress;
+    return this;
+  }
+
+  public PersonAddressBuilder WithPostcode(string postcode)
+  {
+    person.Postcode = postcode;
+    return this;
+  }
+
+  public PersonAddressBuilder In(string city)
+  {
+    person.City = city;
+    return this;
   }
 }
 
@@ -47,9 +86,12 @@ class Program
   static void Main()
   {
     Person person = new PersonBuilder()
-      .Called("Tav")
-      .WorksAs("Dev")
-      .Build();
+      .Lives.At("Tucuman")
+            .In("Argentina")
+            .WithPostcode("4103")
+      .Works.At("Noanet")
+            .AsA("Developer")
+            .Earning(30000);
 
     Console.WriteLine(person);
   }
