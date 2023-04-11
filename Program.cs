@@ -9,16 +9,16 @@ public class Point
     this.y = y;
   }
 
-  // factory method
-  public static Point NewCartesianPoint(double x, double y)
+  private async Task<Point> InitAsync()
   {
-    return new Point(x, y);
+    await Task.Delay(1000);
+    return this;
   }
 
-  // factory method
-  public static Point NewPolarPoint(double rho, double theta)
+  public static Task<Point> CreateAsync(double x, double y)
   {
-    return new Point(rho * Math.Cos(theta), rho * Math.Sin(theta));
+    var result = new Point(x, y);
+    return result.InitAsync();
   }
 }
 
@@ -28,6 +28,6 @@ class Program
 {
   static void Main()
   {
-
+    var x = Point.CreateAsync(3, 2);
   }
 }
